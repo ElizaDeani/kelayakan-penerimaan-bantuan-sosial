@@ -1,0 +1,53 @@
+body {
+  background-color: #4682B4;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 16px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+  transform: scale(0.95);
+  transition: transform 0.3s ease-in-out;
+}
+
+.register-card:hover {
+  transform: scale(1);
+}
+
+.animate-fade-in {
+  opacity: 0;
+  animation: fadeIn 0.8s ease forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+.btn-register {
+  background-color: #4682B4;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+
+.btn-register:hover {
+  background-color: #3b6d99;
+}
+
+.animated-input {
+  transition: all 0.3s ease;
+}
+
+.animated-input:focus {
+  border-color: #4682B4;
+  box-shadow: 0 0 8px rgba(70,130,180,0.3);
+}

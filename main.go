@@ -25,7 +25,14 @@ func main() {
 
 	// Inisialisasi Echo
 	e := echo.New()
+
+	// Middleware
 	e.Use(middleware.Recover())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"http://localhost", "http://localhost:9000", "http://127.0.0.1:5500"},
+		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE},
+	}))
+
 	routes.InitRoutes(e)
 
 	e.GET("/", func(c echo.Context) error {
