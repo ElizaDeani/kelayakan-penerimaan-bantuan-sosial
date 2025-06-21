@@ -24,8 +24,8 @@ func CreateCalon(c echo.Context) error {
 	}
 
 	// Hitung kelayakan dengan fuzzy Tsukamoto
-	kelayakan := utils.HitungFuzzyTsukamoto(calon)
-	calon.Kelayakan = kelayakan
+	result := utils.HitungFuzzyTsukamoto(calon)
+	calon.Kelayakan = result.Skor
 
 	// Simpan ke database
 	if err := database.DB.Create(&calon).Error; err != nil {
@@ -38,7 +38,8 @@ func CreateCalon(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, echo.Map{
 		"message":   "Data calon berhasil disimpan",
-		"kelayakan": kelayakan,
+		"kelayakan": result.Skor,
+		"status":    result.Klasifikasi,
 		"data":      calon,
 	})
 }
@@ -75,5 +76,81 @@ func GetCalonByID(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, echo.Map{
 		"data": calon,
+	})
+}
+
+func UpdateCalon(c echo.Context) error {
+	id := c.Param("id")
+	var existing model.CalonPenerima
+
+	if err := database.DB.First(&existing, id).Error; err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{
+			"message": "Data calon tidak ditemukan",
+		})
+	}
+
+	var input model.CalonPenerima
+	if err := c.Bind(&input); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"message": "Input tidak valid",
+			"error":   err.Error(),
+		})
+	}
+
+	// Hitung ulang fuzzy
+	result := utils.HitungFuzzyTsukamoto(input)
+	input.Kelayakan = result.Skor
+
+	// Update field satu per satu
+	existing.Nama = input.Nama
+	existing.Usia = input.Usia
+	existing.Pekerjaan = input.Pekerjaan
+	existing.PenghasilanBulanan = input.PenghasilanBulanan
+	existing.PengeluaranBulanan = input.PengeluaranBulanan
+	existing.JumlahTanggungan = input.JumlahTanggungan
+	existing.JumlahAnakSekolah = input.JumlahAnakSekolah
+	existing.StatusPerkawinan = input.StatusPerkawinan
+	existing.PendidikanTerakhir = input.PendidikanTerakhir
+	existing.KepemilikanKendaraan = input.KepemilikanKendaraan
+	existing.KepemilikanTempatTinggal = input.KepemilikanTempatTinggal
+	existing.KepemilikanAsetLain = input.KepemilikanAsetLain
+	existing.AksesListrikAir = input.AksesListrikAir
+	existing.PenerimaBantuanLain = input.PenerimaBantuanLain
+	existing.Kelayakan = input.Kelayakan
+
+	if err := database.DB.Save(&existing).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{
+			"message": "Gagal update data",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"message":   "Data calon berhasil diperbarui",
+		"kelayakan": result.Skor,
+		"status":    result.Klasifikasi,
+		"data":      existing,
+	})
+}
+
+func DeleteCalon(c echo.Context) error {
+	id := c.Param("id")
+	var calon model.CalonPenerima
+
+	if err := database.DB.First(&calon, id).Error; err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{
+			"message": "Data calon tidak ditemukan",
+		})
+	}
+
+	if err := database.DB.Delete(&calon).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{
+			"message": "Gagal menghapus data",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"message": "Data calon berhasil dihapus",
 	})
 }

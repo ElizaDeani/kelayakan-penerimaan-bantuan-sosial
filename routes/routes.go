@@ -19,4 +19,7 @@ func InitRoutes(e *echo.Echo) {
 	calon.POST("", handler.CreateCalon)     // tambah calon & hitung kelayakan
 	calon.GET("", handler.GetAllCalon)      // semua data calon
 	calon.GET("/:id", handler.GetCalonByID) // calon by ID
+	calon.PUT("/:id", handler.UpdateCalon)
+	calon.DELETE("/:id", handler.DeleteCalon)
+
 }

@@ -1,56 +1,85 @@
 package utils
 
 import (
-	"math"
+	"strings"
 
 	"github.com/ElizaDeani/kelayakan-penerimaan-bantuan-sosial/model"
 )
 
-// HitungFuzzyTsukamoto menghitung nilai kelayakan menggunakan metode Fuzzy Tsukamoto
-func HitungFuzzyTsukamoto(c model.CalonPenerima) float64 {
-	// Fuzzifikasi input
-	// Nilai keanggotaan di semua himpunan fuzzy
-	μPenghasilanRendah := derajatRendah(float64(c.PenghasilanBulanan), 0, 1000000)
-	μPengeluaranTinggi := derajatTinggi(float64(c.PengeluaranBulanan), 1000000, 3000000)
-	μTanggunganBanyak := derajatTinggi(float64(c.JumlahTanggungan), 2, 5)
-	μAnakSekolahBanyak := derajatTinggi(float64(c.JumlahAnakSekolah), 1, 3)
-	μUsiaTua := derajatTinggi(float64(c.Usia), 50, 65)
-
-	// Aturan (semua AND → min operator)
-	// Jika penghasilan rendah DAN pengeluaran tinggi DAN tanggungan banyak DAN anak sekolah banyak DAN usia tua
-	// Maka kelayakan tinggi
-
-	// Derajat kebenaran masing-masing aturan
-	alpha := math.Min(μPenghasilanRendah,
-		math.Min(μPengeluaranTinggi,
-			math.Min(μTanggunganBanyak,
-				math.Min(μAnakSekolahBanyak, μUsiaTua))))
-
-	// Output Tsukamoto: nilai z dari rule
-	// Kita asumsikan z adalah persentase kelayakan (0–100)
-	z := alpha * 100
-
-	return math.Round(z*100) / 100 // dibulatkan 2 angka di belakang koma
+type FuzzyResult struct {
+	Skor        float64 `json:"skor"`
+	Klasifikasi string  `json:"klasifikasi"`
 }
 
-// Fungsi keanggotaan linear turun
-func derajatRendah(x, a, b float64) float64 {
-	if x <= a {
-		return 1
-	} else if x >= b {
-		return 0
-	} else {
-		return (b - x) / (b - a)
+func HitungFuzzyTsukamoto(c model.CalonPenerima) FuzzyResult {
+	var skor float64
+
+	// Penghasilan: makin rendah makin layak (maks 30)
+	if c.PenghasilanBulanan <= 1000000 {
+		skor += 30
+	} else if c.PenghasilanBulanan <= 2000000 {
+		skor += 20
+	} else if c.PenghasilanBulanan <= 3000000 {
+		skor += 10
 	}
-}
 
-// Fungsi keanggotaan linear naik
-func derajatTinggi(x, a, b float64) float64 {
-	if x <= a {
-		return 0
-	} else if x >= b {
-		return 1
-	} else {
-		return (x - a) / (b - a)
+	// Pengeluaran: makin besar makin layak (maks 20)
+	if c.PengeluaranBulanan >= 2000000 {
+		skor += 20
+	} else if c.PengeluaranBulanan >= 1500000 {
+		skor += 15
+	} else if c.PengeluaranBulanan >= 1000000 {
+		skor += 10
+	}
+
+	// Jumlah tanggungan: makin banyak makin layak (maks 15)
+	if c.JumlahTanggungan >= 5 {
+		skor += 15
+	} else if c.JumlahTanggungan >= 3 {
+		skor += 10
+	} else if c.JumlahTanggungan >= 1 {
+		skor += 5
+	}
+
+	// Jumlah anak sekolah: makin banyak makin layak (maks 15)
+	if c.JumlahAnakSekolah >= 3 {
+		skor += 15
+	} else if c.JumlahAnakSekolah >= 2 {
+		skor += 10
+	} else if c.JumlahAnakSekolah >= 1 {
+		skor += 5
+	}
+
+	// Usia: makin tua makin layak (maks 10)
+	if c.Usia >= 60 {
+		skor += 10
+	} else if c.Usia >= 50 {
+		skor += 5
+	}
+
+	// Tempat tinggal: menumpang atau kontrak lebih layak (maks 10)
+	switch strings.ToLower(c.KepemilikanTempatTinggal) {
+	case "menumpang":
+		skor += 10
+	case "kontrak":
+		skor += 7
+	case "milik sendiri":
+		skor += 2
+	}
+
+	// Klasifikasi
+	var klasifikasi string
+	switch {
+	case skor >= 70:
+		klasifikasi = "Layak"
+	case skor >= 40:
+		klasifikasi = "Kurang Layak"
+	default:
+		klasifikasi = "Tidak Layak"
+	}
+
+	return FuzzyResult{
+		Skor:        skor,
+		Klasifikasi: klasifikasi,
 	}
 }
