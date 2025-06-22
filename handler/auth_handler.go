@@ -36,7 +36,7 @@ func Login(c echo.Context) error {
 	}
 
 	// Generate JWT
-	token, err := utils.GenerateJWT(user.ID)
+	token, err := utils.GenerateJWT(user.ID, user.Username)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Gagal generate token"})
 	}

@@ -154,3 +154,23 @@ func DeleteCalon(c echo.Context) error {
 		"message": "Data calon berhasil dihapus",
 	})
 }
+
+// PreviewCalon menghitung kelayakan tanpa menyimpan ke database
+func PreviewCalon(c echo.Context) error {
+	var calon model.CalonPenerima
+
+	// Bind JSON ke struct
+	if err := c.Bind(&calon); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"message": "Data tidak valid",
+			"error":   err.Error(),
+		})
+	}
+
+	// Hitung kelayakan pakai fuzzy tsukamoto
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"message":   "Perhitungan kelayakan berhasil",
+		"kelayakan": utils.HitungFuzzyTsukamoto(calon),
+	})
+}

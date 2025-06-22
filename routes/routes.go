@@ -16,9 +16,10 @@ func InitRoutes(e *echo.Echo) {
 	calon := e.Group("/calon")
 	calon.Use(utils.JWTMiddleware)
 
-	calon.POST("", handler.CreateCalon)     // tambah calon & hitung kelayakan
-	calon.GET("", handler.GetAllCalon)      // semua data calon
-	calon.GET("/:id", handler.GetCalonByID) // calon by ID
+	calon.POST("", handler.CreateCalon)          // tambah calon & hitung kelayakan
+	calon.POST("/preview", handler.PreviewCalon) // hanya hitung, tidak simpan
+	calon.GET("", handler.GetAllCalon)           // semua data calon
+	calon.GET("/:id", handler.GetCalonByID)      // calon by ID
 	calon.PUT("/:id", handler.UpdateCalon)
 	calon.DELETE("/:id", handler.DeleteCalon)
 

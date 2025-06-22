@@ -1,8 +1,77 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
     // Sidebar toggle
-    document.getElementById('sidebarCollapse').addEventListener('click', function() {
-        document.getElementById('sidebar').classList.toggle('active');
+    const sidebarBtn = document.getElementById("sidebarCollapse");
+    if (sidebarBtn) {
+        sidebarBtn.addEventListener("click", function () {
+            document.getElementById("sidebar").classList.toggle("active");
+        });
+    }
+
+    // Tampilkan username
+    tampilkanUsername();
+
+    // Logout button
+   document.getElementById("logoutBtn").addEventListener("click", function (e) {
+    e.preventDefault();
+    console.log("Logout clicked!");
+
+    Swal.fire({
+        title: "Keluar dari akun?",
+        text: "Kamu akan keluar dari sesi saat ini.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Logout",
+        cancelButtonText: "Batal",
+        confirmButtonColor: "#dc3545",
+        cancelButtonColor: "#6c757d"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            localStorage.removeItem("token");
+            Swal.fire({
+                title: "Berhasil logout!",
+                icon: "success",
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.href = "login.html";
+            });
+        }
     });
+});
+
+
+    // Cek token: redirect ke login kalau tidak ada token
+    const token = localStorage.getItem("token");
+    if (!token) {
+        window.location.href = "login.html";
+    }
+});
+
+// Helper untuk parse token
+function parseJwt(token) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = decodeURIComponent(atob(base64Url).split('').map(c =>
+            '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+        ).join(''));
+        return JSON.parse(base64);
+    } catch (e) {
+        return null;
+    }
+}
+
+// Tampilkan username di navbar
+function tampilkanUsername() {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const payload = parseJwt(token);
+    if (payload && payload.username) {
+        const el = document.getElementById("usernameDisplay");
+        if (el) el.innerText = payload.username;
+    }
+}
+
 
     // Initialize charts
     const distributionCtx = document.getElementById('distributionChart').getContext('2d');
@@ -71,4 +140,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-});
+
+
+

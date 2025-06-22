@@ -253,3 +253,73 @@ body {
     width: 100% !important;
     max-height: 180px;
 }
+
+/* Tambahkan ini di bagian akhir file CSS */
+
+/* Form Input Styles */
+#penerimaForm label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+#penerimaForm .form-control,
+#penerimaForm .form-select {
+    border-radius: 8px;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    transition: all 0.3s;
+}
+
+#penerimaForm .form-control:focus,
+#penerimaForm .form-select:focus {
+    border-color: var(--steel-blue);
+    box-shadow: 0 0 0 0.25rem rgba(70, 130, 180, 0.25);
+}
+
+#hitungBtn {
+    background-color: var(--steel-blue);
+    border: none;
+    padding: 10px 25px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+#simpanBtn {
+    background-color: var(--steel-blue-light);
+    border: none;
+    padding: 10px 25px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+#hitungBtn:hover {
+    background-color: var(--steel-blue-dark);
+    transform: translateY(-2px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #penerimaForm .row > div {
+        padding: 0 5px;
+    }
+}
+/* Form Layout Adjustments */
+.form-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.row.g-3 {
+    --bs-gutter-y: 1rem;
+}
+
+/* Untuk perangkat mobile */
+@media (max-width: 767.98px) {
+    .form-column {
+        display: block;
+    }
+}
+
+.sidebar-logout a:hover {
+  color: #ffc107; /* atau warna hover lain */
+  text-decoration: none;
+}

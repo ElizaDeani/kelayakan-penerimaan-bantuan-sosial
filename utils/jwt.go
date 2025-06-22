@@ -10,7 +10,8 @@ import (
 )
 
 type JWTClaims struct {
-	UserID int `json:"user_id"`
+	UserID   int    `json:"user_id"`
+	Username string `json:"username"`
 	jwt.RegisteredClaims
 }
 
@@ -24,9 +25,10 @@ func getJWTSecret() string {
 }
 
 // Generate token JWT untuk user ID tertentu
-func GenerateJWT(userID int) (string, error) {
+func GenerateJWT(userID int, username string) (string, error) {
 	claims := JWTClaims{
-		UserID: userID,
+		UserID:   userID,
+		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 		},
