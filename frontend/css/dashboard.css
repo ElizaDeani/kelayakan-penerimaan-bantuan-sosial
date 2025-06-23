@@ -323,3 +323,11 @@ body {
   color: #ffc107; /* atau warna hover lain */
   text-decoration: none;
 }
+.pagination .page-item.active .page-link {
+  background-color: #4682B4;
+  border-color: #4682B4;
+  color: white;
+}
+#filterStatus {
+  max-width: 300px;
+}
