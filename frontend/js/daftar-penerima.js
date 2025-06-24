@@ -135,27 +135,9 @@ function getStatusBadge(skor) {
 }
 
 function lihatDetail(id) {
-  const token = localStorage.getItem("token");
-  fetch(`http://localhost:9000/calon/${id}`, {
-    headers: { "Authorization": `Bearer ${token}` }
-  })
-    .then(res => res.json())
-    .then(res => {
-      const data = res.data;
-      let detailHTML = "<ul class='text-start'>";
-      for (const key in data) {
-        detailHTML += `<li><strong>${key}</strong>: ${data[key]}</li>`;
-      }
-      detailHTML += "</ul>";
-
-      Swal.fire({
-        title: "Detail Penerima",
-        html: detailHTML,
-        icon: "info",
-        confirmButtonColor: "#4682B4"
-      });
-    });
+  window.location.href = `detail-penerima.html?id=${id}`;
 }
+
 
 function hapusData(id) {
   Swal.fire({
@@ -180,3 +162,31 @@ function hapusData(id) {
 function editData(id) {
   window.location.href = `edit-penerima.html?id=${id}`;
 }
+// Logout button
+   document.getElementById("logoutBtn").addEventListener("click", function (e) {
+    e.preventDefault();
+    console.log("Logout clicked!");
+
+    Swal.fire({
+        title: "Keluar dari akun?",
+        text: "Kamu akan keluar dari sesi saat ini.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Logout",
+        cancelButtonText: "Batal",
+        confirmButtonColor: "#dc3545",
+        cancelButtonColor: "#6c757d"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            localStorage.removeItem("token");
+            Swal.fire({
+                title: "Berhasil logout!",
+                icon: "success",
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.href = "login.html";
+            });
+        }
+    });
+});

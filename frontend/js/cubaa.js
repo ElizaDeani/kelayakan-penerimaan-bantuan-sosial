@@ -1,183 +1,277 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Sidebar toggle
-    document.getElementById('sidebarCollapse').addEventListener('click', function() {
-        document.getElementById('sidebar').classList.toggle('active');
-    });
-
-    // Hitung Kelayakan Button
-    document.getElementById('hitungBtn').addEventListener('click', function() {
-        // Validasi form
-        const form = document.getElementById('penerimaForm');
-        if (!form.checkValidity()) {
-            form.classList.add('was-validated');
-            return;
-        }
-
-        // Simulasi perhitungan kelayakan (persentase random untuk demo)
-        // Di implementasi nyata, ini akan memanggil endpoint backend Anda
-        const kelayakan = Math.floor(Math.random() * 100);
-        let status = '';
-        let icon = '';
-        
-        if (kelayakan >= 70) {
-            status = 'Layak';
-            icon = 'success';
-        } else if (kelayakan >= 40) {
-            status = 'Kurang Layak';
-            icon = 'warning';
-        } else {
-            status = 'Tidak Layak';
-            icon = 'error';
-        }
-
-        // Tampilkan hasil dengan SweetAlert
-        Swal.fire({
-            title: 'Hasil Perhitungan Kelayakan',
-            html: `
-                <div class="text-center">
-                    <div class="mb-3" style="font-size: 3rem; color: ${icon === 'success' ? '#28a745' : icon === 'warning' ? '#ffc107' : '#dc3545'}">
-                        ${kelayakan}%
-                    </div>
-                    <div class="alert alert-${icon}" role="alert">
-                        Status: <strong>${status}</strong>
-                    </div>
-                    <hr>
-                    <small class="text-muted">* Hasil berdasarkan analisis 15 parameter kelayakan</small>
-                </div>
-            `,
-            icon: icon,
-            confirmButtonText: 'Simpan Data',
-            showCancelButton: true,
-            cancelButtonText: 'Perbaiki Data',
-            confirmButtonColor: '#4682B4'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Simpan data (di implementasi nyata akan mengirim ke backend)
-                Swal.fire({
-                    title: 'Berhasil!',
-                    text: 'Data penerima telah disimpan',
-                    icon: 'success',
-                    confirmButtonColor: '#4682B4'
-                }).then(() => {
-                    form.reset();
-                    form.classList.remove('was-validated');
-                });
-            }
-        });
-    });
-});
-
-function parseJwt(token) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = decodeURIComponent(atob(base64Url).split('').map(c =>
-      '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-    ).join(''));
-    return JSON.parse(base64);
-  } catch (e) {
-    return null;
-  }
-}
-
-function tampilkanUsername() {
+document.addEventListener("DOMContentLoaded", function () {
   const token = localStorage.getItem("token");
-  if (!token) return;
+  if (!token) return (window.location.href = "login.html");
 
-  const payload = parseJwt(token);
-  if (payload && payload.username) {
-    const el = document.getElementById("usernameDisplay");
-    if (el) el.innerText = payload.username;
+  fetch("http://localhost:9000/calon", {
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  })
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.getElementById("tabelPenerima");
+      tbody.innerHTML = "";
+
+      data.data.forEach(item => {
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+          <td>${item.nama}</td>
+          <td>${item.kelayakan.toFixed(0)}%</td>
+          <td>
+            <span class="badge ${getStatusBadge(item.kelayakan)}">
+              ${klasifikasi(item.kelayakan)}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-info btn-sm me-1" onclick="lihatDetail(${item.id})">
+              <i class="fas fa-eye"></i> Detail
+            </button>
+            <button class="btn btn-warning btn-sm me-1" onclick="editData(${item.id})">
+              <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="hapusData(${item.id})">
+              <i class="fas fa-trash-alt"></i> Hapus
+            </button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    });
+
+  function getStatusBadge(skor) {
+    if (skor >= 70) return "bg-success";
+    if (skor >= 40) return "bg-warning text-dark";
+    return "bg-danger";
   }
-}
 
-// Jalankan setelah DOM siap
-document.addEventListener("DOMContentLoaded", tampilkanUsername);
-/////////
-document.addEventListener('DOMContentLoaded', function() {
-    // Sidebar toggle
-    document.getElementById('sidebarCollapse').addEventListener('click', function() {
-        document.getElementById('sidebar').classList.toggle('active');
-    });
-
-    // Initialize charts
-    const distributionCtx = document.getElementById('distributionChart').getContext('2d');
-    const statusCtx = document.getElementById('statusChart').getContext('2d');
-
-    // Distribution Chart (Bar Chart)
-    const distributionChart = new Chart(distributionCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
-            datasets: [
-                {
-                    label: 'Layak',
-                    data: [120, 190, 150, 200, 170, 220, 240, 210, 190, 230, 250, 280],
-                    backgroundColor: '#28a745',
-                    borderColor: '#28a745',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Kurang Layak',
-                    data: [50, 60, 70, 80, 90, 100, 90, 80, 70, 60, 50, 40],
-                    backgroundColor: '#ffc107',
-                    borderColor: '#ffc107',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Tidak Layak',
-                    data: [30, 40, 35, 45, 40, 35, 30, 25, 20, 15, 10, 5],
-                    backgroundColor: '#dc3545',
-                    borderColor: '#dc3545',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-
-    // Status Chart (Doughnut Chart)
-    const statusChart = new Chart(statusCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Layak', 'Kurang Layak', 'Tidak Layak'],
-            datasets: [{
-                data: [856, 266, 132],
-                backgroundColor: [
-                    '#28a745',
-                    '#ffc107',
-                    '#dc3545'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
+  function klasifikasi(skor) {
+    if (skor >= 70) return "Layak";
+    if (skor >= 40) return "Kurang Layak";
+    return "Tidak Layak";
+  }
 });
 
-function parseJwt(token) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = decodeURIComponent(atob(base64Url).split('').map(c =>
-      '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-    ).join(''));
-    return JSON.parse(base64);
-  } catch (e) {
-    return null;
+function lihatDetail(id) {
+  const token = localStorage.getItem("token");
+  fetch(`http://localhost:9000/calon/${id}`, {
+    headers: { "Authorization": `Bearer ${token}` }
+  })
+    .then(res => res.json())
+    .then(res => {
+      const data = res.data;
+      let detailHTML = "<ul class='text-start'>";
+      for (const key in data) {
+        detailHTML += `<li><strong>${key}</strong>: ${data[key]}</li>`;
+      }
+      detailHTML += "</ul>";
+
+      Swal.fire({
+        title: "Detail Penerima",
+        html: detailHTML,
+        icon: "info",
+        confirmButtonColor: "#4682B4"
+      });
+    });
+}
+
+function hapusData(id) {
+  Swal.fire({
+    title: "Hapus Data?",
+    text: "Data tidak dapat dikembalikan setelah dihapus.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#dc3545",
+    cancelButtonColor: "#6c757d",
+    confirmButtonText: "Ya, hapus!"
+  }).then(result => {
+    if (result.isConfirmed) {
+      const token = localStorage.getItem("token");
+      fetch(`http://localhost:9000/calon/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+        .then(() => location.reload());
+    }
+  });
+}
+
+function editData(id) {
+  // Arahkan ke halaman edit, bisa disesuaikan
+  window.location.href = `edit-penerima.html?id=${id}`;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const sidebarBtn = document.getElementById('sidebarCollapse');
+    if (sidebarBtn) {
+        sidebarBtn.addEventListener('click', function () {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+    }
+});
+let semuaData = [];
+let currentPage = 1;
+const rowsPerPage = 5;
+
+function tampilkanData(data) {
+  const tabelBody = document.getElementById("tabelPenerima");
+  const start = (currentPage - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  const paginatedData = data.slice(start, end);
+
+  tabelBody.innerHTML = "";
+
+  if (paginatedData.length === 0) {
+    tabelBody.innerHTML = `<tr><td colspan="4">Tidak ada data</td></tr>`;
+    return;
+  }
+
+  paginatedData.forEach((item) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${item.nama}</td>
+      <td>${item.kelayakan.toFixed(2)}%</td>
+      <td>${item.status}</td>
+      <td>
+        <button class="btn btn-sm btn-info me-2">Detail</button>
+        <button class="btn btn-sm btn-warning me-2">Edit</button>
+        <button class="btn btn-sm btn-danger">Hapus</button>
+      </td>
+    `;
+    tabelBody.appendChild(tr);
+  });
+
+document.addEventListener("DOMContentLoaded", function () {
+  const tabelBody = document.getElementById("tabelPenerima");
+  const filterStatus = document.getElementById("filterStatus");
+
+  let semuaData = []; // untuk menyimpan data asli
+
+  function tampilkanData(data) {
+    tabelBody.innerHTML = "";
+
+    if (data.length === 0) {
+      tabelBody.innerHTML = `<tr><td colspan="4">Tidak ada data</td></tr>`;
+      return;
+    }
+
+    data.forEach((item) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${item.nama}</td>
+        <td>${item.kelayakan.toFixed(2)}%</td>
+        <td>${item.status}</td>
+        <td>
+          <button class="btn btn-sm btn-info me-2">Detail</button>
+          <button class="btn btn-sm btn-warning me-2">Edit</button>
+          <button class="btn btn-sm btn-danger">Hapus</button>
+        </td>
+      `;
+      tabelBody.appendChild(tr);
+    });
+  }
+
+  function filterData() {
+    const selected = filterStatus.value;
+    if (selected === "") {
+      tampilkanData(semuaData);
+    } else {
+      const hasilFilter = semuaData.filter((d) => d.status === selected);
+      tampilkanData(hasilFilter);
+    }
+  }
+
+  // Fetch Data
+  const token = localStorage.getItem("token");
+  fetch("http://localhost:9000/calon", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((res) => res.json())
+    .then((res) => {
+      semuaData = res.data.map((d) => {
+        let status = "";
+        if (d.kelayakan >= 70) status = "Layak";
+        else if (d.kelayakan >= 40) status = "Kurang Layak";
+        else status = "Tidak Layak";
+
+        return { ...d, status };
+      });
+
+      tampilkanData(semuaData);
+    })
+    .catch((err) => {
+      console.error(err);
+      tabelBody.innerHTML = `<tr><td colspan="4">Gagal memuat data</td></tr>`;
+    });
+
+  // Event listener untuk filter
+  filterStatus.addEventListener("change", filterData);
+});
+
+
+
+  tampilkanPagination(data);
+}
+
+function tampilkanPagination(data) {
+  const pagination = document.getElementById("pagination");
+  pagination.innerHTML = "";
+
+  const totalPages = Math.ceil(data.length / rowsPerPage);
+
+  for (let i = 1; i <= totalPages; i++) {
+    const li = document.createElement("li");
+    li.className = `page-item ${i === currentPage ? "active" : ""}`;
+    li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+    li.addEventListener("click", function (e) {
+      e.preventDefault();
+      currentPage = i;
+      filterData(); // Re-render dengan halaman baru
+    });
+    pagination.appendChild(li);
   }
 }
 
+function filterData() {
+  const selected = document.getElementById("filterStatus").value;
+  let filteredData = semuaData;
+
+  if (selected !== "") {
+    filteredData = semuaData.filter((d) => d.status === selected);
+  }
+
+  currentPage = 1; // reset halaman jika filter berubah
+  tampilkanData(filteredData);
+}
+
+// Fetch Data dari Backend
+const token = localStorage.getItem("token");
+fetch("http://localhost:9000/calon", {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+})
+  .then((res) => res.json())
+  .then((res) => {
+    semuaData = res.data.map((d) => {
+      let status = "";
+      if (d.kelayakan >= 70) status = "Layak";
+      else if (d.kelayakan >= 40) status = "Kurang Layak";
+      else status = "Tidak Layak";
+
+      return { ...d, status };
+    });
+
+    tampilkanData(semuaData);
+  })
+  .catch((err) => {
+    console.error(err);
+    document.getElementById("tabelPenerima").innerHTML =
+      `<tr><td colspan="4">Gagal memuat data</td></tr>`;
+  });
+
+// Event listener filter
+document.getElementById("filterStatus").addEventListener("change", filterData);
 

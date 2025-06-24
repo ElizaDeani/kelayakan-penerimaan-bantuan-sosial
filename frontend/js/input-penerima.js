@@ -179,3 +179,31 @@ function tampilkanUsername() {
         if (el) el.innerText = payload.username;
     }
 }
+// Logout button
+   document.getElementById("logoutBtn").addEventListener("click", function (e) {
+    e.preventDefault();
+    console.log("Logout clicked!");
+
+    Swal.fire({
+        title: "Keluar dari akun?",
+        text: "Kamu akan keluar dari sesi saat ini.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Logout",
+        cancelButtonText: "Batal",
+        confirmButtonColor: "#dc3545",
+        cancelButtonColor: "#6c757d"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            localStorage.removeItem("token");
+            Swal.fire({
+                title: "Berhasil logout!",
+                icon: "success",
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.href = "login.html";
+            });
+        }
+    });
+});

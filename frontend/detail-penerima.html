@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Penerima - Manajemen Bansos</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="wrapper">
+    <!-- Sidebar -->
+    <nav id="sidebar" class="active">
+        <div class="sidebar-header">
+            <h3>BANSOS MANAGER</h3>
+            <strong>BS</strong>
+        </div>
+        <ul class="list-unstyled components">
+            <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li>
+                <a href="#inputSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fas fa-user-plus"></i> Input Data
+                </a>
+                <ul class="collapse list-unstyled" id="inputSubmenu">
+                    <li><a href="input-penerima.html"><i class="fas fa-user-edit"></i> Input Penerima</a></li>
+                </ul>
+            </li>
+            <li><a href="daftar-penerima.html"><i class="fas fa-list"></i> Daftar Penerima</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Pengaturan</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="user-info d-flex flex-column align-items-start">
+                <div class="d-flex align-items-center mb-2">
+                    <img src="https://via.placeholder.com/40" alt="User" class="rounded-circle me-2">
+                    <strong id="usernameDisplay" class="text-white"></strong>
+                </div>
+                <div class="sidebar-logout">
+                    <a href="#" id="logoutBtn" class="d-flex align-items-center text-white text-decoration-none">
+                        <i class="fas fa-sign-out-alt me-2"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="content">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <button type="button" id="sidebarCollapse" class="btn btn-steel-blue">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h4 class="mb-0 ms-3">Detail Penerima Bantuan Sosial</h4>
+            </div>
+        </nav>
+
+        <div class="container-fluid mt-4">
+            <div class="card">
+                <div class="card-body" id="detailContainer">
+                    <p>Memuat data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom JS -->
+<script>
+    function parseJwt(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = decodeURIComponent(atob(base64Url).split('').map(c =>
+                '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+            ).join(''));
+            return JSON.parse(base64);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function tampilkanUsername() {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const payload = parseJwt(token);
+        if (payload && payload.username) {
+            document.getElementById("usernameDisplay").innerText = payload.username;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const sidebarBtn = document.getElementById("sidebarCollapse");
+        if (sidebarBtn) {
+            sidebarBtn.addEventListener("click", function () {
+                document.getElementById("sidebar").classList.toggle("active");
+            });
+        }
+        tampilkanUsername();
+
+        const token = localStorage.getItem("token");
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get("id");
+
+        if (!id || !token) {
+            document.getElementById("detailContainer").innerHTML = '<div class="alert alert-danger">ID tidak ditemukan atau belum login.</div>';
+            return;
+        }
+
+        fetch(`http://localhost:9000/calon/${id}`, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        .then(res => res.json())
+        .then(res => {
+            const data = res.data;
+            let html = `
+                <h5 class="mb-4">Detail Informasi Penerima</h5>
+                <table class="table table-bordered">
+                    <tr><th>ID</th><td>${data.id}</td></tr>
+                    <tr><th>Nama</th><td>${data.nama}</td></tr>
+                    <tr><th>Usia</th><td>${data.usia}</td></tr>
+                    <tr><th>Pekerjaan</th><td>${data.pekerjaan}</td></tr>
+                    <tr><th>Penghasilan Bulanan</th><td>${data.penghasilan_bulanan}</td></tr>
+                    <tr><th>Pengeluaran Bulanan</th><td>${data.pengeluaran_bulanan}</td></tr>
+                    <tr><th>Jumlah Tanggungan</th><td>${data.jumlah_tanggungan}</td></tr>
+                    <tr><th>Jumlah Anak Sekolah</th><td>${data.jumlah_anak_sekolah}</td></tr>
+                    <tr><th>Status Perkawinan</th><td>${data.status_perkawinan}</td></tr>
+                    <tr><th>Pendidikan Terakhir</th><td>${data.pendidikan_terakhir}</td></tr>
+                    <tr><th>Kepemilikan Kendaraan</th><td>${data.kepemilikan_kendaraan}</td></tr>
+                    <tr><th>Kepemilikan Tempat Tinggal</th><td>${data.kepemilikan_tempat_tinggal}</td></tr>
+                    <tr><th>Aset Lain</th><td>${data.kepemilikan_aset_lain ? 'Ada' : 'Tidak Ada'}</td></tr>
+                    <tr><th>Akses Listrik dan Air</th><td>${data.akses_listrik_air}</td></tr>
+                    <tr><th>Bantuan Lain</th><td>${data.penerima_bantuan_lain ? 'Ada' : 'Tidak Ada'}</td></tr>
+                    <tr><th>Skor Kelayakan</th><td>${data.kelayakan.toFixed(0)}%</td></tr>
+                    <tr><th>Status</th><td>${data.kelayakan >= 70 ? 'Layak' : data.kelayakan >= 40 ? 'Kurang Layak' : 'Tidak Layak'}</td></tr>
+                </table>
+            `;
+            document.getElementById("detailContainer").innerHTML = html;
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById("detailContainer").innerHTML = '<div class="alert alert-danger">Gagal memuat data.</div>';
+        });
+    });
+
+    // Logout button
+   document.getElementById("logoutBtn").addEventListener("click", function (e) {
+    e.preventDefault();
+    console.log("Logout clicked!");
+
+    Swal.fire({
+        title: "Keluar dari akun?",
+        text: "Kamu akan keluar dari sesi saat ini.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Logout",
+        cancelButtonText: "Batal",
+        confirmButtonColor: "#dc3545",
+        cancelButtonColor: "#6c757d"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            localStorage.removeItem("token");
+            Swal.fire({
+                title: "Berhasil logout!",
+                icon: "success",
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.href = "login.html";
+            });
+        }
+    });
+});
+</script>
+</body>
+</html>
