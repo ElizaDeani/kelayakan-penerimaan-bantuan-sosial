@@ -6,6 +6,7 @@ import (
 	"github.com/ElizaDeani/kelayakan-penerimaan-bantuan-sosial/database"
 	"github.com/ElizaDeani/kelayakan-penerimaan-bantuan-sosial/model"
 	"github.com/ElizaDeani/kelayakan-penerimaan-bantuan-sosial/utils"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -77,4 +78,43 @@ func Register(c echo.Context) error {
 		"message": "Registrasi berhasil",
 		"user":    echo.Map{"username": newUser.Username},
 	})
+}
+
+func UpdateUser(c echo.Context) error {
+	user := model.User{} // Pastikan kamu punya model User
+
+	// Ambil user dari token
+	token := c.Get("user").(*jwt.Token)
+	claims := token.Claims.(jwt.MapClaims)
+	username := claims["username"].(string)
+
+	// Cari user yang login
+	var existingUser model.User
+	if err := database.DB.Where("username = ?", username).First(&existingUser).Error; err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"message": "User tidak ditemukan"})
+	}
+
+	// Bind input baru
+	if err := c.Bind(&user); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"message": "Data tidak valid"})
+	}
+
+	// Hash password baru
+	hashed, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	existingUser.Username = user.Username
+	existingUser.Password = string(hashed)
+
+	// Simpan perubahan
+	if err := database.DB.Save(&existingUser).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"message": "Gagal update user"})
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{"message": "Berhasil update username dan password"})
+}
+
+func ResetCalon(c echo.Context) error {
+	if err := database.DB.Exec("DELETE FROM calon_penerima").Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"message": "Gagal reset data"})
+	}
+	return c.JSON(http.StatusOK, echo.Map{"message": "Semua data berhasil dihapus"})
 }

@@ -1,5 +1,11 @@
 document.addEventListener("DOMContentLoaded", function () {
-    // Sidebar toggle
+    const token = localStorage.getItem("token");
+    if (!token) {
+        window.location.href = "login.html";
+        return;
+    }
+
+    // === SIDEBAR TOGGLE ===
     const sidebarBtn = document.getElementById("sidebarCollapse");
     if (sidebarBtn) {
         sidebarBtn.addEventListener("click", function () {
@@ -7,47 +13,74 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Tampilkan username
+    // === TAMPILKAN USERNAME ===
     tampilkanUsername();
 
-    // Logout button
-   document.getElementById("logoutBtn").addEventListener("click", function (e) {
-    e.preventDefault();
-    console.log("Logout clicked!");
+    // === LOGOUT BUTTON ===
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", function (e) {
+            e.preventDefault();
 
-    Swal.fire({
-        title: "Keluar dari akun?",
-        text: "Kamu akan keluar dari sesi saat ini.",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Logout",
-        cancelButtonText: "Batal",
-        confirmButtonColor: "#dc3545",
-        cancelButtonColor: "#6c757d"
-    }).then((result) => {
-        if (result.isConfirmed) {
-            localStorage.removeItem("token");
             Swal.fire({
-                title: "Berhasil logout!",
-                icon: "success",
-                timer: 1500,
-                showConfirmButton: false
-            }).then(() => {
-                window.location.href = "login.html";
+                title: "Keluar dari akun?",
+                text: "Kamu akan keluar dari sesi saat ini.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Logout",
+                cancelButtonText: "Batal",
+                confirmButtonColor: "#dc3545",
+                cancelButtonColor: "#6c757d"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem("token");
+                    Swal.fire({
+                        title: "Berhasil logout!",
+                        icon: "success",
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = "login.html";
+                    });
+                }
             });
-        }
+        });
+    }
+
+    // === FETCH DATA UNTUK KARTU & CHART ===
+    fetch("http://localhost:9000/calon", {
+        headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(res => {
+        const data = res.data;
+
+        let total = data.length;
+        let layak = 0, kurangLayak = 0, tidakLayak = 0;
+
+        data.forEach(item => {
+            const skor = item.kelayakan;
+            if (skor >= 70) layak++;
+            else if (skor >= 40) kurangLayak++;
+            else tidakLayak++;
+        });
+
+        // Tampilkan ke Cards
+        document.getElementById("totalPenerima").innerText = total;
+        document.getElementById("layakCount").innerText = layak;
+        document.getElementById("kurangLayakCount").innerText = kurangLayak;
+        document.getElementById("tidakLayakCount").innerText = tidakLayak;
+
+        // Render Charts
+        renderCharts(data);
+    })
+    .catch(err => {
+        console.error("Gagal fetch data:", err);
     });
 });
 
+// === FUNCTION TAMBAHAN ===
 
-    // Cek token: redirect ke login kalau tidak ada token
-    const token = localStorage.getItem("token");
-    if (!token) {
-        window.location.href = "login.html";
-    }
-});
-
-// Helper untuk parse token
 function parseJwt(token) {
     try {
         const base64Url = token.split('.')[1];
@@ -60,86 +93,92 @@ function parseJwt(token) {
     }
 }
 
-// Tampilkan username di navbar
 function tampilkanUsername() {
     const token = localStorage.getItem("token");
     if (!token) return;
-
     const payload = parseJwt(token);
-    if (payload && payload.username) {
+    if (payload?.username) {
         const el = document.getElementById("usernameDisplay");
         if (el) el.innerText = payload.username;
     }
 }
 
+function renderCharts(dataPenerima) {
+    const currentMonth = new Date().getMonth(); // 0 = Jan
+    const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const layakData = Array(12).fill(0);
+    const kurangLayakData = Array(12).fill(0);
+    const tidakLayakData = Array(12).fill(0);
 
-    // Initialize charts
-    const distributionCtx = document.getElementById('distributionChart').getContext('2d');
-    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    dataPenerima.forEach(item => {
+        if (!item.created_at) return;
+        const bulan = new Date(item.created_at).getMonth();
+        if (bulan <= currentMonth) {
+            const skor = item.kelayakan;
+            if (skor >= 70) layakData[bulan]++;
+            else if (skor >= 40) kurangLayakData[bulan]++;
+            else tidakLayakData[bulan]++;
+        }
+    });
 
-    // Distribution Chart (Bar Chart)
-    const distributionChart = new Chart(distributionCtx, {
+    const distributionCtx = document.getElementById('distributionChart');
+    const statusCtx = document.getElementById('statusChart');
+    if (!distributionCtx || !statusCtx) {
+        console.warn("Canvas chart tidak ditemukan");
+        return;
+    }
+
+    // Bar Chart
+    new Chart(distributionCtx.getContext('2d'), {
         type: 'bar',
         data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+            labels: labels,
             datasets: [
                 {
                     label: 'Layak',
-                    data: [120, 190, 150, 200, 170, 220, 240, 210, 190, 230, 250, 280],
-                    backgroundColor: '#28a745',
-                    borderColor: '#28a745',
-                    borderWidth: 1
+                    data: layakData,
+                    backgroundColor: '#28a745'
                 },
                 {
                     label: 'Kurang Layak',
-                    data: [50, 60, 70, 80, 90, 100, 90, 80, 70, 60, 50, 40],
-                    backgroundColor: '#ffc107',
-                    borderColor: '#ffc107',
-                    borderWidth: 1
+                    data: kurangLayakData,
+                    backgroundColor: '#ffc107'
                 },
                 {
                     label: 'Tidak Layak',
-                    data: [30, 40, 35, 45, 40, 35, 30, 25, 20, 15, 10, 5],
-                    backgroundColor: '#dc3545',
-                    borderColor: '#dc3545',
-                    borderWidth: 1
+                    data: tidakLayakData,
+                    backgroundColor: '#dc3545'
                 }
             ]
         },
         options: {
             responsive: true,
             scales: {
-                y: {
-                    beginAtZero: true
-                }
+                y: { beginAtZero: true }
             }
         }
     });
 
-    // Status Chart (Doughnut Chart)
-    const statusChart = new Chart(statusCtx, {
+    // Doughnut Chart
+    new Chart(statusCtx.getContext('2d'), {
         type: 'doughnut',
         data: {
             labels: ['Layak', 'Kurang Layak', 'Tidak Layak'],
             datasets: [{
-                data: [856, 266, 132],
-                backgroundColor: [
-                    '#28a745',
-                    '#ffc107',
-                    '#dc3545'
+                data: [
+                    layakData.reduce((a,b)=>a+b, 0),
+                    kurangLayakData.reduce((a,b)=>a+b, 0),
+                    tidakLayakData.reduce((a,b)=>a+b, 0)
                 ],
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
                 borderWidth: 1
             }]
         },
         options: {
             responsive: true,
             plugins: {
-                legend: {
-                    position: 'bottom'
-                }
+                legend: { position: 'bottom' }
             }
         }
     });
-
-
-
+}

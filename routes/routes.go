@@ -15,6 +15,8 @@ func InitRoutes(e *echo.Echo) {
 	// Grup endpoint yang butuh JWT
 	calon := e.Group("/calon")
 	calon.Use(utils.JWTMiddleware)
+	e.PUT("/pengaturan", handler.UpdateUser, utils.JWTMiddleware)
+	e.DELETE("/pengaturan", handler.DeleteCalon, utils.JWTMiddleware)
 
 	calon.POST("", handler.CreateCalon)          // tambah calon & hitung kelayakan
 	calon.POST("/preview", handler.PreviewCalon) // hanya hitung, tidak simpan

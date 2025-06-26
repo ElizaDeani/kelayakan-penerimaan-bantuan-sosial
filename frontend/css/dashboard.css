@@ -254,6 +254,10 @@ body {
     max-height: 180px;
 }
 
+#content .container-fluid {
+    margin-top: 2rem; /* atau coba 3rem jika perlu lebih jauh */
+}
+
 /* Tambahkan ini di bagian akhir file CSS */
 
 /* Form Input Styles */
